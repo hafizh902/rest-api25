@@ -1,6 +1,6 @@
 <?php
 use App\Http\Controllers\API\ProductController;
-use iluminate\Http\Request;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {

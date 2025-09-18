@@ -11,6 +11,7 @@ use App\Models\Product;
 // use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -21,8 +22,16 @@ class ProductController extends Controller
         return response()->json(new ProductCollection($products), Response::HTTP_OK);
     }
 
-    public function store(ProductRequest $product){
-        $product = Product::create($product->validated());
+    public function store(ProductRequest $request){
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('images', 'public');
+        } elseif ($request->image && is_string($request->image)) {
+            $data['image'] = $request->image; // URL
+        }
+
+        $product = Product::create($data);
         return response()->json([
             'status'   => true,
             'message'  => 'Produk Berhasil Ditambahkan',
@@ -41,7 +50,23 @@ class ProductController extends Controller
 
     public function update(ProductRequest $request, $id){
         $product = Product::findOrFail($id);
-        $product->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            // Delete old image if it's a file
+            if ($product->image && !filter_var($product->image, FILTER_VALIDATE_URL)) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->file('image')->store('images', 'public');
+        } elseif ($request->image && is_string($request->image)) {
+            // Delete old image if it's a file
+            if ($product->image && !filter_var($product->image, FILTER_VALIDATE_URL)) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->image; // URL
+        }
+
+        $product->update($data);
         return response()->json([
             'status'   => true,
             'message'  => 'Produk Berhasil Diupdate',
